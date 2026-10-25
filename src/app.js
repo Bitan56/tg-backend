@@ -7,22 +7,22 @@ const productRoutes = require('./routes/productRoutes');
 
 const app = express();
 
-const allowedOrigins = (process.env.CLIENT_URL || '*')
-  .split(',')
-  .map((o) => o.trim().replace(/\/$/, ''))
-  .filter(Boolean);
+// Dynamically reflect the request's origin back to allow any client
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Reflects incoming origin so credentials/cookies and any domain work seamlessly
+    callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  optionsSuccessStatus: 200, // Legacy browser compatibility (IE11)
+};
 
-app.use(
-  cors({
-    origin: (origin, cb) => {
-      // allow non-browser tools (no origin) and whitelisted origins
-      if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
-        return cb(null, true);
-      }
-      cb(new Error(`Origin ${origin} not allowed by CORS`));
-    },
-  })
-);
+app.use(cors(corsOptions));
+
+// Handle preflight requests explicitly across all routes
+app.options('*', cors(corsOptions));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
